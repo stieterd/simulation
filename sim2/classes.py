@@ -28,6 +28,7 @@ class App:
 		self.apple_max = apple_max
 		self.apple_image = pygame.image.load('apple.png').convert_alpha()
 		self.start_game_time = time.time()
+		self.paused = False
 		for idx, x in enumerate(self.all_players):
 
 			#eerste is de goede tweede was eentje waar de populatie makkelijker overleeft
@@ -55,6 +56,8 @@ class App:
 		selectedplayer = 0
 		no_select = True
 		previous_time = time.time()
+		
+
 		while self.running:
 
 			for event in pygame.event.get():
@@ -75,6 +78,14 @@ class App:
 					if event.key == pygame.K_UP:
 						if self.apple_now < self.apple_max:
 							self.apple_now += 1
+					if event.key == pygame.K_p:
+						if self.paused == False:
+							self.paused = True
+							
+
+						else:
+							self.paused = False
+							
 
 
 			self.deltatime = time.time() - previous_time
@@ -101,7 +112,15 @@ class App:
 
 					gensize +=1
 					self.new_apples = self.all_apples[:]
-					r_player = player.movement(self.deltatime)
+
+					if self.paused == True:
+						player.start_time += self.deltatime
+						r_player = player.pausedplayer()
+
+					elif self.paused == False:
+						r_player = player.movement(self.deltatime)
+
+
 					if r_player.collidepoint(pygame.mouse.get_pos()):
 						if selectedplayer != player:
 							selectedplayer = player
@@ -172,15 +191,19 @@ class App:
 			if len(self.all_players) == 0:
 
 				text = self.creature_font.render((f"All the creatures are dead"), True, Colors.blue)
-				self.screen.blit(text, (160, 280))
+				self.screen.blit(text, (self.specs[0]//4, self.specs[1]//2))
 
-			if time.time()-apple_new_time > self.apple_time:
+			if self.paused == False:
 
-				if len(self.all_apples) < self.apple_now:
+				if time.time()-apple_new_time > self.apple_time:
 
-					self.all_apples = np.append(self.all_apples, np.array([Apple(20, self.specs)]))
-					
-					apple_new_time = time.time()
+					if len(self.all_apples) < self.apple_now:
+
+						self.all_apples = np.append(self.all_apples, np.array([Apple(20, self.specs)]))
+						
+						apple_new_time = time.time()
+			elif self.paused == True:
+				apple_new_time += self.deltatime
 
 			self.clock.tick(60)
 			if no_select == False:
@@ -275,6 +298,12 @@ class Player:
 				if self.y < 0:
 					self.y = 0
 				
+
+		self.player_rect = pygame.Rect(self.x, self.y, self.size, self.size)
+
+		return pygame.draw.rect(self.screen, self.color, (self.x, self.y, self.size, self.size)) 
+
+	def pausedplayer(self):
 
 		self.player_rect = pygame.Rect(self.x, self.y, self.size, self.size)
 
